@@ -32,6 +32,8 @@
   #msg { color: var(--muted); }
   #help { display: none; max-width: 340px; margin: 0 auto; }
   #help.on { display: block; }
+  #why { display: block; margin-top: 14px; font-size: 13px; color: var(--muted); }
+  #why:empty { display: none; }
   #help a { display: inline-block; margin-top: 12px; padding: 14px 26px; border-radius: 14px; background: var(--brand); color: var(--bg); font-weight: 800; text-decoration: none; }
   #shop { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: none; background: var(--bg); }
 </style>
@@ -43,14 +45,14 @@
     <div class="stage"><div class="ld nologo" id="ld"><div class="ring" id="spin"></div><img id="lgo" alt="" hidden></div><img class="bot" id="bot" alt="" hidden></div>
     <div id="title"></div>
     <div id="msg">Loading…</div>
-    <div id="help"><div id="helpt">This is taking longer than usual.</div><a id="open" target="_top" rel="noopener">Open the page</a></div>
+    <div id="help"><div id="helpt">This is taking longer than usual.</div><a id="open" target="_top" rel="noopener">Open the page</a><small id="why"></small></div>
   </div>
 </div>
 <iframe id="shop" title="Shop" allow="autoplay; clipboard-write; fullscreen; web-share"></iframe>
 <script>
   /* ✏️ Your public shop deployment's Web app URL (ends in /exec), and the order link this page shows when no other is asked for */
   var EXEC = 'https://script.google.com/macros/s/AKfycbzFLg7NCPjqFCgSL6aPql9b7_kb1WPTYURDw-nG_qtx05A1WdcTEdaU38XC64OvXJLC/exec';
-  var SHOP = '0bf5d70823434753a1c07315b5b4265f';
+  var SHOP = '0bf5d70823434753a1c07315b5b4265f';   /* ✏️ replace with your link's code (the part after shop= in 📋 Copy) */
 
   /* ?shop=…&o=… on this page picks the order link (and one order); otherwise SHOP is shown */
   var q = new URLSearchParams(location.search); if (!q.get('shop')) q.set('shop', SHOP); q.delete('via'); q.delete('api');
@@ -59,6 +61,19 @@
 
   /* 🏷 The loading screen wears the order link's theme: remembered from the last visit (instant), and asked for straight away */
   var LOOK_KEY = 'sbLook:' + q.get('shop');
+  /* 🔖 the browser tab's icon: your header logo (or the order link's logo), trimmed and fitted into a square. Put back after the shop
+     page loads, since that replaces this page's head. */
+  var ICON = '', ICON_SRC = '';
+  function putIcon() { if (!ICON) return; var hd = document.head || document.getElementsByTagName('head')[0]; if (!hd) return;
+    var l = hd.querySelector('link[rel~="icon"]'); if (!l) { l = document.createElement('link'); l.rel = 'icon'; hd.appendChild(l); } l.type = 'image/png'; l.href = ICON; }
+  function setIcon(src) { if (!src || src === ICON_SRC) return; ICON_SRC = src; var im = new Image();
+    im.onload = function () { try { var W = im.naturalWidth, H = im.naturalHeight, t = document.createElement('canvas'); t.width = W; t.height = H; var g = t.getContext('2d'); g.drawImage(im, 0, 0);
+        var d = g.getImageData(0, 0, W, H).data, x0 = W, y0 = H, x1 = -1, y1 = -1;
+        for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 12) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+        if (x1 < 0) { x0 = 0; y0 = 0; x1 = W - 1; y1 = H - 1; }
+        var bw = x1 - x0 + 1, bh = y1 - y0 + 1, c = document.createElement('canvas'); c.width = c.height = 64; var k = Math.min(64 / bw, 64 / bh), w = bw * k, h = bh * k;
+        c.getContext('2d').drawImage(t, x0, y0, bw, bh, (64 - w) / 2, (64 - h) / 2, w, h); ICON = c.toDataURL('image/png'); putIcon(); } catch (x) {} };
+    im.src = src; }
   function look(L) { if (!L || !L.bg) return; var r = document.documentElement.style;
     ['bg', 'text', 'muted', 'brand', 'soft'].forEach(function (k) { if (/^#[0-9a-f]{3,8}$/i.test(L[k] || '')) r.setProperty('--' + k, L[k]); });
     if (L.font && /^[A-Za-z0-9 ]{1,40}$/.test(L.font)) { if (!document.getElementById('lkfont')) { var ln = document.createElement('link'); ln.id = 'lkfont'; ln.rel = 'stylesheet';
@@ -68,6 +83,7 @@
     if (L.title) { document.getElementById('title').textContent = L.title; document.title = L.title; }
     var im = document.getElementById('lgo'); if (L.logo && /^data:image\/(png|jpeg|webp);base64,/.test(L.logo)) { im.src = L.logo; im.hidden = false; document.getElementById('ld').classList.remove('nologo'); }
     var co = document.getElementById('co'); if (L.company && /^data:image\/(png|jpeg|webp);base64,/.test(L.company)) { co.src = L.company; co.hidden = false; }
+    setIcon(/^data:image\/(png|jpeg|webp);base64,/.test(L.company || '') ? L.company : /^data:image\/(png|jpeg|webp);base64,/.test(L.logo || '') ? L.logo : '');
     var bt = document.getElementById('bot'); if (L.bot && /^<svg[\s>]/.test(L.bot)) { var sv = L.bot; if (!/^<svg[^>]*\sxmlns=/.test(sv)) sv = sv.replace(/^<svg/, '<svg xmlns="http:' + '\x2F\x2F' + 'www.w3.org/2000/svg"'); if (/xlink:/.test(sv) && !/xmlns:xlink=/.test(sv)) sv = sv.replace(/^<svg/, '<svg xmlns:xlink="http:' + '\x2F\x2F' + 'www.w3.org/1999/xlink"');
       bt.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(sv); bt.hidden = false; } }
   try { look(JSON.parse(localStorage.getItem(LOOK_KEY) || 'null')); } catch (x) {}
@@ -98,12 +114,15 @@
     }, true);
   } + ')(' + JSON.stringify(EXEC) + ');';
 
-  var done = false;
-  function framed() {   /* older server code: show Google's page inside this one, like before */
+  var done = false, why = '';
+  /* 🔎 why the shop couldn't load as data: shown under the button, so the fix is easy to spot */
+  function reason(t) { why = t; try { console.warn('Shop page: ' + t); } catch (x) {} var r = document.getElementById('why'); if (r) r.textContent = t; }
+  function framed() {   /* older server code (or no data): show Google's page inside this one, like before */
     if (done) return; done = true;
     var f = document.getElementById('shop'), w = document.getElementById('wait');
     window.addEventListener('message', function (e) { var h = ''; try { h = new URL(e.origin).hostname; } catch (x) { return; }
       if (/\.googleusercontent\.com$/.test(h) && e.data && e.data.supplybot === 'ready') w.classList.add('gone'); });
+    f.onload = function () { setTimeout(function () { w.classList.add('gone'); }, 2500); };   /* whatever Google shows (even an error) is better than waiting */
     f.style.display = 'block'; f.src = google_url;
   }
   function slow(t) { document.getElementById('spin').style.display = 'none'; document.getElementById('msg').style.display = 'none';
@@ -111,18 +130,22 @@
   var timer = setTimeout(function () { slow(); }, 20000);
 
   fetch(EXEC + '?' + q.toString() + '&api=page')
-    .then(function (r) { return r.text(); })
+    .then(function (r) { if (!r.ok) reason('Google answered ' + r.status + ': check the EXEC address at the top of index.html.'); return r.text(); })
     .then(function (t) {
-      var d; try { d = JSON.parse(t); } catch (x) { return framed(); }   /* not data: the deployment still has the older code */
+      var d; try { d = JSON.parse(t); } catch (x) {   /* not data */
+        reason(/accounts\.google\.com|ServiceLogin|Sign in/i.test(t) ? 'Your shop deployment asks visitors to sign in: set Who has access to Anyone (not Anyone with Google account).'
+          : /unable to open the file|not found|404/i.test(t) ? 'Google can’t find that deployment: check the EXEC address at the top of index.html.'
+          : 'Your shop deployment still has the older code: Deploy → Manage deployments → ✏️ → New version.');
+        return framed(); }
       if (!d || d.err || !d.html) { clearTimeout(timer); return slow(d && d.err); }
       done = true; clearTimeout(timer);
       var head = '<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><script>' + SHIM + '<\/script>';
       var h = String(d.html);
       h = /<head[^>]*>/i.test(h) ? h.replace(/<head[^>]*>/i, function (m) { return m + head; }) : head + h;
-      document.open(); document.write(h); document.close();
+      document.open(); document.write(h); document.close(); putIcon();
       if (d.title) document.title = d.title;
     })
-    .catch(function () { framed(); });
+    .catch(function () { reason('Couldn’t reach your shop deployment: check the EXEC address, and that Who has access is Anyone.'); framed(); });
 </script>
 </body>
 </html>
