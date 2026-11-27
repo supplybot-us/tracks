@@ -62,9 +62,12 @@
   .fnote.b { color: var(--brand); text-shadow: 0 0 10px var(--brand); }
   @keyframes fnote { 0% { opacity: 0; transform: translate(0, 12px) scale(.6) rotate(0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx, 20px), -96px) scale(1.25) rotate(var(--r, 20deg)); } }
   /* 📊 the equalizer */
-  .eq { display: flex; align-items: flex-end; justify-content: center; gap: 5px; height: 34px; margin: 2px auto 14px; }
-  .eq i { width: 6px; height: 100%; border-radius: 3px; background: linear-gradient(to top, var(--brand), var(--spark)); transform-origin: bottom; animation: eq 2.2s ease-in-out infinite; }
-  @keyframes eq { 0%, 100% { transform: scaleY(.2); } 50% { transform: scaleY(1); } }
+  /* 📊 the loading bar: frequency bars that light up from left to right as the shop loads, with the percentage under them */
+  .eq { display: flex; align-items: flex-end; justify-content: center; gap: 4px; height: 46px; width: min(380px, 82vw); margin: 4px auto 6px; }
+  .eq i { flex: 1; max-width: 7px; height: 50%; border-radius: 3px 3px 1px 1px; background: color-mix(in srgb, var(--text) 16%, transparent); transform-origin: bottom; animation: eq 1s ease-in-out infinite alternate; transition: background .35s; }
+  .eq i.on { background: linear-gradient(to top, var(--brand), var(--spark)); }
+  @keyframes eq { from { transform: scaleY(.3); } to { transform: scaleY(1); } }
+  .pc { font-weight: 800; font-size: 26px; line-height: 1.2; margin: 0 0 12px; font-variant-numeric: tabular-nums; color: var(--text); }
   #title { font-weight: 800; font-size: 22px; margin-bottom: 4px; letter-spacing: .01em; }
   #title:empty { display: none; }
   #msg { color: var(--muted); min-height: 1.5em; transition: opacity .35s; }
@@ -107,7 +110,8 @@
       </div>
       <img class="bot" id="bot" alt="" hidden>
     </div>
-    <div class="eq" id="spin"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="eq" id="spin"></div>
+    <div class="pc" id="pc">0%</div>
     <div id="title"></div>
     <div id="sub">Get ready for deep relaxation and focus</div>
     <div id="breath" aria-live="off"></div>
@@ -129,7 +133,8 @@
   (function () { var w = document.getElementById('wait'); for (var k = 0; k < 70; k++) { var st = document.createElement('span'); st.className = 'star';
       st.style.left = (Math.random() * 100) + '%'; st.style.top = (Math.random() * 100) + '%'; st.style.animationDelay = (Math.random() * 3) + 's'; st.style.animationDuration = (2 + Math.random() * 3) + 's';
       if (Math.random() < .2) { st.style.width = st.style.height = '3px'; } w.insertBefore(st, w.firstChild); }
-    [].forEach.call(document.querySelectorAll('.eq i'), function (b, k) { b.style.animationDelay = (-Math.random()).toFixed(2) + 's'; b.style.animationDuration = (.6 + Math.random() * .7).toFixed(2) + 's'; });
+    (function () { var eq = document.getElementById('spin'), N = 36; for (var k = 0; k < N; k++) { var b = document.createElement('i'), x = k / (N - 1), h = .26 + .66 * Math.pow(Math.sin(Math.PI * (.12 + x * .82)), 1.2) * (.72 + .28 * Math.sin(k * 1.7));
+      b.style.height = Math.round(h * 100) + '%'; b.style.animationDelay = (-Math.random()).toFixed(2) + 's'; b.style.animationDuration = (.45 + Math.random() * .7).toFixed(2) + 's'; eq.appendChild(b); } })();
     var M = ['Get comfortable: your session is about to begin…', 'Headphones on 🎧 for the full experience', 'Let your shoulders drop…', 'Soften your gaze. Unclench your jaw…', 'Tuning every track to 432 Hz…', 'Your mind is slowing down to the rhythm…', 'Deep relaxation and focus, coming right up…'], n = 0, el = document.getElementById('msg');
     /* ⏳ after 25 s: gentler words, because Google can take a while to wake the shop up */
     setTimeout(function () { M = ['Stay with your breath: almost there…', 'Big libraries take a moment to open…', 'Let each breath out be a little longer…', 'Thank you for slowing down with us…', 'Nearly ready…']; n = -1; }, 25000);
@@ -180,7 +185,7 @@
   var BAKED = null;
   if (BAKED && BAKED.bg) look(BAKED); else { try { look(JSON.parse(localStorage.getItem(LOOK_KEY) || 'null')); } catch (x) {} }
   (function lookNow(n) { fetch(EXEC + '?' + q.toString() + '&api=look').then(function (r) { return r.json(); }).then(function (L) {
-    if (done || !L || !L.bg) return; look(L); try { localStorage.setItem(LOOK_KEY, JSON.stringify(L)); } catch (x) {} }).catch(function () { if (!done && n < 8) setTimeout(function () { lookNow(n + 1); }, 4000); }); })(0);
+    if (done || !L || !L.bg) return; ldTo(45); look(L); try { localStorage.setItem(LOOK_KEY, JSON.stringify(L)); } catch (x) {} }).catch(function () { if (!done && n < 8) setTimeout(function () { lookNow(n + 1); }, 4000); }); })(0);
 
   /* The order page's server calls go straight to your deployment (the same five calls it makes on Google's page) */
   var SHIM = '(' + function (EXEC) {
@@ -206,6 +211,14 @@
     }, true);
   } + ')(' + JSON.stringify(EXEC) + ');';
 
+  /* 📊 how far along: creeps on its own while Google wakes the shop (never stalls, never passes 94% on its own), jumps at each real
+     step (the shop's look arrives 45%, the page arrives 88%), and fills to 100% just before the shop appears */
+  var LD = { cur: 0, cap: 30, lit: -1 };
+  function ldTo(p) { if (p > LD.cap) LD.cap = p; }
+  var ldT = setInterval(function () { var bars = document.querySelectorAll('#spin i'), pc = document.getElementById('pc'); if (!pc) { clearInterval(ldT); return; }
+    if (LD.cap < 100 && LD.cap - LD.cur < 1.5 && LD.cap < 94) LD.cap += .12; LD.cur += (LD.cap - LD.cur) * (LD.cap >= 100 ? .3 : .06) + (LD.cap >= 100 ? .8 : 0); if (LD.cur > LD.cap) LD.cur = LD.cap;
+    var n = Math.round(LD.cur / 100 * bars.length); if (n !== LD.lit) { for (var k = 0; k < bars.length; k++) bars[k].className = k < n ? 'on' : ''; LD.lit = n; } pc.textContent = Math.floor(LD.cur) + '%'; }, 50);
+  function ldDone(go) { ldTo(100); var t0 = Date.now(), w = setInterval(function () { if (LD.cur >= 99.5 || Date.now() - t0 > 1400) { clearInterval(w); var pc = document.getElementById('pc'); if (pc) pc.textContent = '100%'; setTimeout(go, 200); } }, 40); }
   var done = false, why = '';
   /* 🔎 why the shop hasn't loaded yet (for you, in the browser's console; visitors just see the loading screen) */
   function reason(t) { why = t; try { console.warn('Shop page: ' + t); } catch (x) {} if (tries >= 4) { var w = document.getElementById('why'); if (w) w.textContent = '🔎 ' + t; } }
@@ -221,7 +234,7 @@
     window.addEventListener('message', function (e) { var h = ''; try { h = new URL(e.origin).hostname; } catch (x) { return; }
       if (/\.googleusercontent\.com$/.test(h) && e.data && e.data.supplybot === 'ready') w.classList.add('gone'); });
     f.onload = function () { setTimeout(function () { w.classList.add('gone'); }, 2500); };   /* whatever Google shows (even an error) is better than waiting */
-    f.style.display = 'block'; f.src = google_url;
+    ldTo(80); f.style.display = 'block'; f.src = google_url;
   }
   /* ⏳ no buttons: the page keeps waiting and tries again by itself until the shop answers (a little longer between tries each time) */
   var tries = 0;
@@ -235,12 +248,12 @@
           if (/unable to open the file|not found|404/i.test(t)) { reason('Google can’t find that deployment: check the EXEC address.'); return again(); }
           reason('Your shop deployment still has older code: showing Google’s page.'); return framed(); }   /* older code: its own page still works */
         if (!d || d.err || !d.html) { reason((d && d.err) || 'No page yet.'); return again(15000); }
-        done = true;
+        done = true; ldTo(88); ldDone(function () {
         var head = '<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><script>' + SHIM + '<\/script>';
         var h = String(d.html);
         h = /<head[^>]*>/i.test(h) ? h.replace(/<head[^>]*>/i, function (m) { return m + head; }) : head + h;
         document.open(); document.write(h); document.close(); putIcon();
-        if (d.title) document.title = d.title;
+        if (d.title) document.title = d.title; });
       })
       .catch(function () { reason('Couldn’t reach the shop yet: trying again.'); again(); });
   }
