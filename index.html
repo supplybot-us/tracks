@@ -185,7 +185,7 @@
   var BAKED = null;
   if (BAKED && BAKED.bg) look(BAKED); else { try { look(JSON.parse(localStorage.getItem(LOOK_KEY) || 'null')); } catch (x) {} }
   (function lookNow(n) { fetch(EXEC + '?' + q.toString() + '&api=look').then(function (r) { return r.json(); }).then(function (L) {
-    if (done || !L || !L.bg) return; ldTo(45); look(L); try { localStorage.setItem(LOOK_KEY, JSON.stringify(L)); } catch (x) {} }).catch(function () { if (!done && n < 8) setTimeout(function () { lookNow(n + 1); }, 4000); }); })(0);
+    if (done || !L || !L.bg) return; __sbLdTo(45); look(L); try { localStorage.setItem(LOOK_KEY, JSON.stringify(L)); } catch (x) {} }).catch(function () { if (!done && n < 8) setTimeout(function () { lookNow(n + 1); }, 4000); }); })(0);
 
   /* The order page's server calls go straight to your deployment (the same five calls it makes on Google's page) */
   var SHIM = '(' + function (EXEC) {
@@ -213,12 +213,12 @@
 
   /* 📊 how far along: creeps on its own while Google wakes the shop (never stalls, never passes 94% on its own), jumps at each real
      step (the shop's look arrives 45%, the page arrives 88%), and fills to 100% just before the shop appears */
-  var LD = { cur: 0, cap: 30, lit: -1 };
-  function ldTo(p) { if (p > LD.cap) LD.cap = p; }
-  var ldT = setInterval(function () { var bars = document.querySelectorAll('#spin i'), pc = document.getElementById('pc'); if (!pc) { clearInterval(ldT); return; }
-    if (LD.cap < 100 && LD.cap - LD.cur < 1.5 && LD.cap < 94) LD.cap += .12; LD.cur += (LD.cap - LD.cur) * (LD.cap >= 100 ? .3 : .06) + (LD.cap >= 100 ? .8 : 0); if (LD.cur > LD.cap) LD.cur = LD.cap;
-    var n = Math.round(LD.cur / 100 * bars.length); if (n !== LD.lit) { for (var k = 0; k < bars.length; k++) bars[k].className = k < n ? 'on' : ''; LD.lit = n; } pc.textContent = Math.floor(LD.cur) + '%'; }, 50);
-  function ldDone(go) { ldTo(100); var t0 = Date.now(), w = setInterval(function () { if (LD.cur >= 99.5 || Date.now() - t0 > 1400) { clearInterval(w); var pc = document.getElementById('pc'); if (pc) pc.textContent = '100%'; setTimeout(go, 200); } }, 40); }
+  var __sbLd = { cur: 0, cap: 30, lit: -1 };
+  function __sbLdTo(p) { if (p > __sbLd.cap) __sbLd.cap = p; }
+  var __sbLdT = setInterval(function () { var bars = document.querySelectorAll('#spin i'), pc = document.getElementById('pc'); if (!pc) { clearInterval(__sbLdT); return; }
+    if (__sbLd.cap < 100 && __sbLd.cap - __sbLd.cur < 1.5 && __sbLd.cap < 94) __sbLd.cap += .12; __sbLd.cur += (__sbLd.cap - __sbLd.cur) * (__sbLd.cap >= 100 ? .3 : .06) + (__sbLd.cap >= 100 ? .8 : 0); if (__sbLd.cur > __sbLd.cap) __sbLd.cur = __sbLd.cap;
+    var n = Math.round(__sbLd.cur / 100 * bars.length); if (n !== __sbLd.lit) { for (var k = 0; k < bars.length; k++) bars[k].className = k < n ? 'on' : ''; __sbLd.lit = n; } pc.textContent = Math.floor(__sbLd.cur) + '%'; }, 50);
+  function __sbLdDone(go) { __sbLdTo(100); var t0 = Date.now(), w = setInterval(function () { if (__sbLd.cur >= 99.5 || Date.now() - t0 > 1400) { clearInterval(w); var pc = document.getElementById('pc'); if (pc) pc.textContent = '100%'; setTimeout(go, 200); } }, 40); }
   var done = false, why = '';
   /* 🔎 why the shop hasn't loaded yet (for you, in the browser's console; visitors just see the loading screen) */
   function reason(t) { why = t; try { console.warn('Shop page: ' + t); } catch (x) {} if (tries >= 4) { var w = document.getElementById('why'); if (w) w.textContent = '🔎 ' + t; } }
@@ -234,7 +234,7 @@
     window.addEventListener('message', function (e) { var h = ''; try { h = new URL(e.origin).hostname; } catch (x) { return; }
       if (/\.googleusercontent\.com$/.test(h) && e.data && e.data.supplybot === 'ready') w.classList.add('gone'); });
     f.onload = function () { setTimeout(function () { w.classList.add('gone'); }, 2500); };   /* whatever Google shows (even an error) is better than waiting */
-    ldTo(80); f.style.display = 'block'; f.src = google_url;
+    __sbLdTo(80); f.style.display = 'block'; f.src = google_url;
   }
   /* ⏳ no buttons: the page keeps waiting and tries again by itself until the shop answers (a little longer between tries each time) */
   var tries = 0;
@@ -248,7 +248,7 @@
           if (/unable to open the file|not found|404/i.test(t)) { reason('Google can’t find that deployment: check the EXEC address.'); return again(); }
           reason('Your shop deployment still has older code: showing Google’s page.'); return framed(); }   /* older code: its own page still works */
         if (!d || d.err || !d.html) { reason((d && d.err) || 'No page yet.'); return again(15000); }
-        done = true; ldTo(88); ldDone(function () {
+        done = true; __sbLdTo(88); __sbLdDone(function () {
         var head = '<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><script>' + SHIM + '<\/script>';
         var h = String(d.html);
         h = /<head[^>]*>/i.test(h) ? h.replace(/<head[^>]*>/i, function (m) { return m + head; }) : head + h;
