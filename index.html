@@ -124,6 +124,8 @@
   /* ✏️ Your public shop deployment's Web app URL (ends in /exec), and the order link this page shows when no other is asked for */
   var EXEC = 'https://script.google.com/macros/s/AKfycbzkex2urb0T6wvnnp_XqbegjZ-0jW8DdhNPfzZT4HCLODZZRXur2fK16xF9VoOgpEpI/exec';
   var SHOP = '0bf5d70823434753a1c07315b5b4265f';
+  /* ✉️ ?join=1 (the link in "You're invited to join Supplybot" emails) goes straight to the Supplybot sign-up page */
+  if (/[?&]join=1(&|$)/.test(location.search)) { try { document.title = 'Join Supplybot'; } catch (x) {} location.replace(EXEC + '?signup=1'); }
 
   /* ?shop=…&o=… on this page picks the order link (and one order); otherwise SHOP is shown */
   var q = new URLSearchParams(location.search); if (!q.get('shop')) q.set('shop', SHOP); q.delete('via'); q.delete('api');
